@@ -11,23 +11,21 @@ import UIKit
 class ViewController: UIViewController {
     
     
-    @IBOutlet var setCardBoard: [SetCardView]! {
+    @IBOutlet weak var lblMatches: UILabel!
+    @IBOutlet weak var lblCardsInDeck: UILabel!
+    
+    //This is where all the cards will go...
+    @IBOutlet weak var playingTableOfCards: UIView!
+    
+    //This is going to be the array of SetCards that we will use to graphically show the board
+    var setBoardCards = [SetCardView]() {
         didSet {
-            
-            print("did set setCardBoard view array called...")
-            
-            for index in self.setCardBoard.indices {
-                //Key here is the tapGestureRecognizer is attaching itself to each of the views.  Could also do this in storyboard.
-                //now once if recognizes a tap will start the function tapRecognized in self or the viewController it will pass recognizer which will be the UIGesture recog
-                //can use this recognizer.state or .view will know which view had the event...
+            for index in self.setBoardCards.indices {
                 let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.tapRecognized(recognizer:)))
-                self.setCardBoard[index].addGestureRecognizer(tapGestureRecognizer)
+                self.setBoardCards[index].addGestureRecognizer(tapGestureRecognizer)
             }
         }
     }
-    
-    @IBOutlet weak var lblMatches: UILabel!
-    @IBOutlet weak var lblCardsInDeck: UILabel!
     
     var cardsInDeck: Int = 0 {
         didSet {
@@ -45,26 +43,113 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupBoard()
         deckOfCards.printStatsDeckCardStatus()
+        
+        setupBoard()
         
         
     }
     
     func setupBoard() {
         
-        //deal the cards
-        for index in setCardBoard.indices {
-            let tempCard = deckOfCards.deck[index]
-            deckOfCards.deck[index].cardStatus = SetCard.CardCondition.onBoard
-            setCardBoard[index].newCardDisplayed(card: tempCard)
+        
+        if setBoardCards.count == 0 {
+            dealInitalCards()
         }
         
+        //show the cards that are in the array
+        for index in setBoardCards.indices {
+            let tempCard = deckOfCards.deck[index]
+            deckOfCards.deck[index].cardStatus = SetCard.CardCondition.onBoard
+            setBoardCards[index].newCardDisplayed(card: tempCard)
+            
+            //card needs to start life off in the discard pile.  Move to correct position later
+            self.playingTableOfCards.addSubview(self.setBoardCards[index])
+            
+        }
+        
+        var xPos: CGFloat = 45
+        var yPos: CGFloat = 55
+        let duration: TimeInterval = 0.8
+        var delay: TimeInterval = 0.0
+        
+        //testing
+        var timesThrough = 0
+        var animateThrough = 0
+        
+        //would be nice to start with the last one?  Or just have a facedown card
+        
+        
+        
+        for index in setBoardCards.indices {
+            UIViewPropertyAnimator.runningPropertyAnimator(withDuration: duration, delay: delay, options: [.curveEaseIn], animations: {
+                //animations
+                if xPos > self.playingTableOfCards.bounds.maxX - 50 {
+                    yPos = yPos + 105
+                    xPos = 45
+                }
+                self.setBoardCards[index].center.x = xPos
+                self.setBoardCards[index].center.y = yPos
+                //duration = duration + 0.1
+                delay = delay + 0.5
+                xPos = xPos + 80 + 12
+                animateThrough = animateThrough + 1
+                print("animate through \(animateThrough)")
+                
+                
+            }) { (animatingPosition: UIViewAnimatingPosition) in
+                //completion
+                //print(animatingPosition.rawValue)
+                timesThrough = timesThrough + 1
+                if animatingPosition == .end {
+                    print("animating position ended... timesThrough \(timesThrough)")
+                }
+            }
+            
+            
+        }
+        
+        //questions remain???
+        //why does it start the animation 2 times ? This causes each animation to stop 2 times...
+        print("times through is \(timesThrough)")
         //reset the scores
         matches = 0
         cardsInDeck = deckOfCards.cardsInDeck
         
+    }
+    
+    /////////////////  TO DO ////////////////////////
+    
+    //when a match is selected just remove the cards from the board and reshuffle the empty slots.
+    //This will probably not work because the indexex of the GUI and the model are married..
+    
+    
+    
+    
+    
+    
+    func dealInitalCards() {
         
+        let height = playingTableOfCards.bounds.height
+        let width = playingTableOfCards.bounds.width
+        
+        let widthOfCard: CGFloat = (width - 20) / 4
+        
+        print("Height is \(height).  Width is \(width)")
+        
+        
+        
+        //lets deal 4 cards...
+        for index in 1...12 {
+            //Cards are going to start off life in the discard pile.  Will animate them into the correct position later...
+            let newFrame = CGRect(x: 0, y: height - 100, width: widthOfCard, height: 100.0)
+            let card = deckOfCards.deck[index]
+            let cardView = SetCardView(frame: newFrame, card: card)
+            setBoardCards.append(cardView)
+            
+        }
+        
+        setupBoard()
         
     }
     
@@ -87,8 +172,8 @@ class ViewController: UIViewController {
         var cardsSelected = 0
         
         //going through index of cardViews to determine how many are selected.
-        for index in setCardBoard.indices {
-            if setCardBoard[index].isSelected {
+        for index in setBoardCards.indices {
+            if setBoardCards[index].isSelected {
                 cardsSelected = cardsSelected + 1
             }
         }
@@ -108,10 +193,10 @@ class ViewController: UIViewController {
         
         var cardsToPass = [SetCard]()
         
-        for index in setCardBoard.indices {
+        for index in setBoardCards.indices {
             
-            if setCardBoard[index].isSelected {
-                if let tempSetCard = setCardBoard[index].card {
+            if setBoardCards[index].isSelected {
+                if let tempSetCard = setBoardCards[index].card {
                     cardsToPass.append(tempSetCard)
                 }
             }
@@ -137,11 +222,11 @@ class ViewController: UIViewController {
                 } else {
                     //now that we have the card and we have our model marked the view is still in place 3 are selected
                     //update the view
-                    for index in setCardBoard.indices {
-                        if setCardBoard[index].isSelected {
+                    for index in setBoardCards.indices {
+                        if setBoardCards[index].isSelected {
                             //already checked for nil
-                            setCardBoard[index].newCardDisplayed(card: newCard!)
-                            setCardBoard[index].isSelected = false
+                            setBoardCards[index].newCardDisplayed(card: newCard!)
+                            setBoardCards[index].isSelected = false
                             //this will break out of the for loop.  I wanto to move on to the next card...
                             break
                         }
@@ -156,8 +241,8 @@ class ViewController: UIViewController {
             
         } else {
             //setting the view property all to false
-            for index in setCardBoard.indices {
-                setCardBoard[index].isSelected = false
+            for index in setBoardCards.indices {
+                setBoardCards[index].isSelected = false
             }
         }
         
@@ -167,12 +252,17 @@ class ViewController: UIViewController {
     func newGame() {
         
         deckOfCards = DeckSetCards()
+        //setBoardCards = [SetCardView]()
+        
+        for index in setBoardCards.indices {
+            setBoardCards[index].removeFromSuperview()
+        }
+        
+        setBoardCards.removeAll()
+        
         setupBoard()
         
     }
-    
-    
-    
     
     //For now this is the new game pressed
     @IBAction func dealCardsPressed() {
