@@ -17,6 +17,27 @@ class ViewController: UIViewController {
     //This is where all the cards will go...
     @IBOutlet weak var playingTableOfCards: UIView!
     
+    //This will be for sizing of the cards and area
+    lazy var height = playingTableOfCards.bounds.height
+    lazy var width = playingTableOfCards.bounds.width
+    
+    //Right now the grid would take 24 cards 6*4
+    //May want to start the number off as 12 and when the count of the array increases change the size of the cards...
+    //computed property ?????
+    //more than 24 would need to make each row 5
+    //more than 30 6 rows...
+    // the 4 is the number of rows
+    lazy var widthOfCard: CGFloat = (width - (gap * gap + 4)) / 4
+    
+    
+    
+    
+    
+    let gap: CGFloat = 4
+    //the 6 here is the number of rows
+    lazy var heightOfCard: CGFloat = (height - (gap * gap + 12)) / 6
+    //Need to make the height and width of the card dynamic so that it looks at the amount of cards that will be on the board.
+    
     //This is going to be the array of SetCards that we will use to graphically show the board
     var setBoardCards = [SetCardView]() {
         didSet {
@@ -68,14 +89,14 @@ class ViewController: UIViewController {
             
         }
         
-        var xPos: CGFloat = 45
-        var yPos: CGFloat = 55
+        var xPos: CGFloat = gap + (widthOfCard / 2)
+        var yPos: CGFloat = gap + (heightOfCard / 2)
         let duration: TimeInterval = 0.8
         var delay: TimeInterval = 0.0
         
         //testing
-        var timesThrough = 0
-        var animateThrough = 0
+        //var timesThrough = 0
+        //var animateThrough = 0
         
         //would be nice to start with the last one?  Or just have a facedown card
         
@@ -84,25 +105,25 @@ class ViewController: UIViewController {
         for index in setBoardCards.indices {
             UIViewPropertyAnimator.runningPropertyAnimator(withDuration: duration, delay: delay, options: [.curveEaseIn], animations: {
                 //animations
-                if xPos > self.playingTableOfCards.bounds.maxX - 50 {
-                    yPos = yPos + 105
-                    xPos = 45
+                if xPos > self.width - (self.widthOfCard / 2) {
+                    yPos = yPos + self.heightOfCard + self.gap
+                    xPos = self.gap + (self.widthOfCard / 2)
                 }
                 self.setBoardCards[index].center.x = xPos
                 self.setBoardCards[index].center.y = yPos
                 //duration = duration + 0.1
                 delay = delay + 0.5
-                xPos = xPos + 80 + 12
-                animateThrough = animateThrough + 1
-                print("animate through \(animateThrough)")
+                xPos = xPos + self.widthOfCard + self.gap
+                //animateThrough = animateThrough + 1
+                //print("animate through \(animateThrough)")
                 
                 
             }) { (animatingPosition: UIViewAnimatingPosition) in
                 //completion
                 //print(animatingPosition.rawValue)
-                timesThrough = timesThrough + 1
+                //timesThrough = timesThrough + 1
                 if animatingPosition == .end {
-                    print("animating position ended... timesThrough \(timesThrough)")
+                    //print("animating position ended... timesThrough \(timesThrough)")
                 }
             }
             
@@ -111,7 +132,7 @@ class ViewController: UIViewController {
         
         //questions remain???
         //why does it start the animation 2 times ? This causes each animation to stop 2 times...
-        print("times through is \(timesThrough)")
+        //print("times through is \(timesThrough)")
         //reset the scores
         matches = 0
         cardsInDeck = deckOfCards.cardsInDeck
@@ -130,19 +151,12 @@ class ViewController: UIViewController {
     
     func dealInitalCards() {
         
-        let height = playingTableOfCards.bounds.height
-        let width = playingTableOfCards.bounds.width
         
-        let widthOfCard: CGFloat = (width - 20) / 4
-        
-        print("Height is \(height).  Width is \(width)")
-        
-        
-        
-        //lets deal 4 cards...
-        for index in 1...12 {
+        //lets deal initial cards...
+        //Should update the frames for the cards size if this number changes
+        for index in 1...20 {
             //Cards are going to start off life in the discard pile.  Will animate them into the correct position later...
-            let newFrame = CGRect(x: 0, y: height - 100, width: widthOfCard, height: 100.0)
+            let newFrame = CGRect(x: 0, y: height - 100, width: widthOfCard, height: heightOfCard)
             let card = deckOfCards.deck[index]
             let cardView = SetCardView(frame: newFrame, card: card)
             setBoardCards.append(cardView)
@@ -211,6 +225,30 @@ class ViewController: UIViewController {
             //print("deal 3 more cards")
             //3 of the cards in the view are going to be marked as selected
             
+            //want to do an animation.  Lets make the cards big, then alpha 0 before getting replaced
+            for index in setBoardCards.indices {
+                
+                UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 1.0, delay: 0, options: .curveLinear, animations: {
+                    //animations
+                    if self.setBoardCards[index].isSelected {
+                        print("in animation loop")
+                        //let myVar: CGAffineTransform = CGAffineTransform(scaleX: 3.0, y: 3.0)
+                        //self.setBoardCards[index].transform.scaledBy(x: 6.0, y: 6.0)
+                        self.setBoardCards[index].transform = CGAffineTransform(scaleX: 3.0, y: 3.0)
+                    }
+                }) { (animatingPosition) in
+                    //another animation in the first completion handler
+                    UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 2.0, delay: 0, options: .curveLinear, animations: {
+                        //animations
+                        self.setBoardCards[index].transform = CGAffineTransform(scaleX: 1.0, y: 1.0)
+                    }, completion: nil)
+                    
+                    
+                }
+                
+            }
+            
+            
             for card in cardsToPass {
                 let newCard = self.deckOfCards.markCardAsDiscardedNeedAnotherCard(cardToMarkAsDiscarded: card)
                 print("new card added to be discarded \(card.cardName)")
@@ -248,6 +286,7 @@ class ViewController: UIViewController {
         
         
     }
+    
     
     func newGame() {
         
