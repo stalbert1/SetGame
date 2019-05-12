@@ -25,6 +25,33 @@ struct DeckSetCards {
         return returnedNumber
     }
     
+    //calculated property that determines if the game is over.  Right now will only return true if you have a perfect win game
+    var isGameOver: Bool {
+        
+        var discardCout = 0
+        var inDeckCount = 0
+        var onBoardCount = 0
+        
+        for card in self.deck {
+            switch card.cardStatus {
+            case .discarded:
+                discardCout = discardCout + 1
+            case .inDeck:
+                inDeckCount = inDeckCount + 1
+            case .onBoard:
+                onBoardCount = onBoardCount + 1
+                
+            }
+        }
+        
+        if (inDeckCount == 0 && onBoardCount == 0 && discardCout == 81) {
+            return true
+        } else {
+            return false
+        }
+        
+    }
+    
     init() {
         // Will need to loop through using the 4 static Vars in the setCard Class to create a single deck of 81 cards?
         
@@ -44,6 +71,7 @@ struct DeckSetCards {
         //shuffle the deck
         self.deck.shuffle()
     }// End init
+    
     
     //function that will take a card as an arg and will return a card to replace it with if there is a card in the deck
     //mark the card that is passed in as played?? as a property on the card...
