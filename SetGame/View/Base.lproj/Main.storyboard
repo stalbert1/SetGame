@@ -18,7 +18,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Matches" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vao-vc-Rfh">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Score" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vao-vc-Rfh">
                                 <rect key="frame" x="16" y="585" width="107" height="21"/>
                                 <constraints>
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="107" id="wRU-nL-NVE"/>
@@ -77,7 +77,7 @@
                     </view>
                     <connections>
                         <outlet property="lblCardsInDeck" destination="N2p-Xk-3Ec" id="kcp-yK-fT0"/>
-                        <outlet property="lblMatches" destination="vao-vc-Rfh" id="XmJ-gR-m7H"/>
+                        <outlet property="lblScore" destination="vao-vc-Rfh" id="XmJ-gR-m7H"/>
                         <outlet property="playingTableOfCards" destination="4lF-84-bOp" id="ssg-gJ-0Vu"/>
                     </connections>
                 </viewController>

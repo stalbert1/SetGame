@@ -93,9 +93,11 @@ class SetCardView: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
+        
+        
     }
     
-    private func setup() {
+    public func setup() {
         
         //need to clear all the other views off of the selfView
         imgView1.removeFromSuperview()

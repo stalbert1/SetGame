@@ -11,7 +11,7 @@ import UIKit
 class ViewController: UIViewController {
     
     
-    @IBOutlet weak var lblMatches: UILabel!
+    @IBOutlet weak var lblScore: UILabel!
     @IBOutlet weak var lblCardsInDeck: UILabel!
     
     //MARK: Instance Variables...
@@ -21,11 +21,14 @@ class ViewController: UIViewController {
         }
     }
     
-    var matches: Int = 0 {
+    var score: Int = 0 {
         didSet {
-            lblMatches.text = "Matches = \(self.matches)"
+            lblScore.text = "Score = \(self.score)"
         }
     }
+    
+    //This will be increased every time the deals button is used...
+    var multiplier: Int = 1
     
     var deckOfCards = DeckSetCards()
     
@@ -96,43 +99,41 @@ class ViewController: UIViewController {
     //MARK: Start Of Functions
     override func viewDidLoad() {
         super.viewDidLoad()
-        deckOfCards.printStatsDeckCardStatus()
-        
-        setupBoard()
+        //deckOfCards.printStatsDeckCardStatus()
+        deal(numberOfCards: cardsToStart)
         
         
     }
     
-    func setupBoard() {
+    //Using this to simplify the problem...
+    func placeCardsIntoPositionWithoutAnimation() {
         
+        var xPos: CGFloat = gap + (widthOfCard / 2)
+        var yPos: CGFloat = gap + (heightOfCard / 2)
         
-        if setBoardCards.count == 0 {
-            dealInitalCards()
-        }
-        
-        //show the cards that are in the array
         for index in setBoardCards.indices {
-            let tempCard = deckOfCards.deck[index]
-            deckOfCards.deck[index].cardStatus = SetCard.CardCondition.onBoard
-            setBoardCards[index].newCardDisplayed(card: tempCard)
+            if xPos > self.width - (self.widthOfCard / 2) {
+                yPos = yPos + self.heightOfCard + self.gap
+                xPos = self.gap + (self.widthOfCard / 2)
+            }
+            self.setBoardCards[index].center.x = xPos
+            self.setBoardCards[index].center.y = yPos
+            xPos = xPos + self.widthOfCard + self.gap
             
-            //card needs to start life off in the discard pile.  Move to correct position later
-            self.playingTableOfCards.addSubview(self.setBoardCards[index])
             
+            //test
+            //self.setBoardCards[index].setup()
         }
+        
+        
+    }
+    
+    func animateCardsIntoPosition() {
         
         var xPos: CGFloat = gap + (widthOfCard / 2)
         var yPos: CGFloat = gap + (heightOfCard / 2)
         let duration: TimeInterval = 0.3
         var delay: TimeInterval = 0.0
-        
-        //testing
-        //var timesThrough = 0
-        //var animateThrough = 0
-        
-        //would be nice to start with the last one?  Or just have a facedown card
-        
-        
         
         for index in setBoardCards.indices {
             UIViewPropertyAnimator.runningPropertyAnimator(withDuration: duration, delay: delay, options: [.curveEaseIn], animations: {
@@ -162,37 +163,64 @@ class ViewController: UIViewController {
             
         }
         
-        //questions remain???
         //why does it start the animation 2 times ? This causes each animation to stop 2 times...
         //print("times through is \(timesThrough)")
-        //reset the scores
-        matches = 0
-        cardsInDeck = deckOfCards.cardsInDeck
         
     }
     
-    func dealInitalCards() {
+    
+    func deal(numberOfCards: Int) {
         
-        
-        //lets deal initial cards...
-        //Should update the frames for the cards size if this number changes
-        for index in 1...cardsToStart {
+        //Creating the actual SetCard View Programmatically, and appending it to the array of SetCardsView...
+        for index in 1...numberOfCards {
             //Cards are going to start off life in the discard pile.  Will animate them into the correct position later...
             let newFrame = CGRect(x: 0, y: height - 100, width: widthOfCard, height: heightOfCard)
             let card = deckOfCards.deck[index]
             let cardView = SetCardView(frame: newFrame, card: card)
             setBoardCards.append(cardView)
-            
+           
         }
         
-        setupBoard()
+        //Let's see if we can see what the diff is between the numberOfCards and the indicies
+        //print("setBoardCards.count - numberOfCards = \(cardsToStart - 12)")
+        
+        
+        //setting the setCard onto the playing board and updating the model...
+        for index in setBoardCards.indices {
+            //this needs to be done, only if you are having to change the size of the cards, cards are 21 or 31??
+            let tempCard = deckOfCards.deck[index]
+            setBoardCards[index].bounds.size = CGSize(width: widthOfCard, height: heightOfCard)
+            setBoardCards[index].removeFromSuperview()
+            setBoardCards[index] = SetCardView(frame: setBoardCards[index].frame, card: tempCard)
+            
+            deckOfCards.deck[index].cardStatus = SetCard.CardCondition.onBoard
+            //card needs to start life off in the discard pile.  Move to correct position later
+            self.playingTableOfCards.addSubview(self.setBoardCards[index])
+        }
+   
+        print("cards to start is \(cardsToStart)")
+        //animateCardsIntoPosition()
+        placeCardsIntoPositionWithoutAnimation()
+        
+        //calling this to update the label to show how many cards are left in the deck
+        cardsInDeck = deckOfCards.cardsInDeck
+    
         
     }
     
     
     @IBAction func dealMoreCardsPressed(_ sender: UIButton) {
         
-        print("deal more cards")
+        //only want the ability to place 42 cards on the board...
+        //also need to make sure cards are left in the deck
+        if (cardsToStart < 42 && deckOfCards.cardsInDeck >= 2 ){
+            //create a penalty to the score for dealing more cards
+            score = score + (multiplier * -2)
+            multiplier = multiplier + 1
+            
+            cardsToStart = cardsToStart + 3
+            deal(numberOfCards: 3)
+        }
         
     }
     
@@ -222,7 +250,7 @@ class ViewController: UIViewController {
         }
         
         if cardsSelected == 3 {
-            print("Send the 3 cards to see if there is a match then turn all cards to false")
+            //print("Send the 3 cards to see if there is a match then turn all cards to false")
             threeCardsAreSelected()
         }
         
@@ -250,7 +278,7 @@ class ViewController: UIViewController {
         
         //Now we have our 3 cards to pass to see if we have a match
         let isMatched = SetLogic.isThisValidSet(card1: cardsToPass[0], card2: cardsToPass[1], card3: cardsToPass[2])
-        print("is match returned \(isMatched)")
+        //print("is match returned \(isMatched)")
         
         if isMatched {
             //bring out 3 new cards to replace the others
@@ -262,7 +290,7 @@ class ViewController: UIViewController {
                 UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0, delay: 0, options: .curveLinear, animations: {
                     //animations
                     if self.setBoardCards[index].isSelected {
-                        print("in animation loop")
+                        //print("in animation loop")
                         self.setBoardCards[index].transform = CGAffineTransform(scaleX: 1.5, y: 1.5)
                         self.setBoardCards[index].alpha = 0
                     }
@@ -309,7 +337,8 @@ class ViewController: UIViewController {
             }//end of is matched
             
             //update matches and cards in deck
-            matches = matches + 1
+            //maybe make more lucrative of score if multiplier is low...
+            score = score + (12 - multiplier)
             cardsInDeck = deckOfCards.cardsInDeck
             
             
@@ -326,16 +355,19 @@ class ViewController: UIViewController {
     
     func newGame() {
         
+        //Step 1 would be to first take the score and record it in a high score if applicable.
+        
         deckOfCards = DeckSetCards()
-        //setBoardCards = [SetCardView]()
         
         for index in setBoardCards.indices {
             setBoardCards[index].removeFromSuperview()
         }
         
         setBoardCards.removeAll()
-        
-        setupBoard()
+        cardsToStart = 12
+        score = 0
+        multiplier = 1
+        deal(numberOfCards: cardsToStart)
         
     }
     
